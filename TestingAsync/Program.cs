@@ -45,13 +45,13 @@ namespace TestingAsync
         private static void Foo()
         {
             MakeCoffeeAsync("a").Wait(); //this is now sync
-            Running("a");
+            Running("all a's finished");
             MakeCoffeeAsync("b"); //this is async but is awaitable so warning.
-            Running("b");
+            Running("b's still running");
             var t = MakeCoffeeAsync("c"); //start thread/Task now. don't block this thread
-            Running("c");
+            Running("c's still running");
             _ = FryEggsAsync("d"); //start thread/Task now. don't block this thread
-            Running("d");
+            Running("d's still running");
         }
 
         private static void Running(string v)
@@ -60,128 +60,6 @@ namespace TestingAsync
         }
 
         const int iDelay = 1000;
-
-        #region
-
-        private class Coffee
-        {
-        }
-
-        private class Egg
-        {
-        }
-
-        private class Bacon
-        {
-        }
-
-        private class Toast
-        {
-        }
-
-        private class Juice
-        {
-        }
-        static async Task Main3(string[] args)
-        {
-            Coffee cup = PourCoffee();
-            Console.WriteLine("coffee is ready");
-            Egg eggs = FryEggs(2);
-            Console.WriteLine("eggs are ready");
-            Bacon bacon = FryBacon(3);
-            Console.WriteLine("bacon is ready");
-            Toast toast = ToastBread(2);
-            ApplyButter(toast);
-            ApplyJam(toast);
-            Console.WriteLine("toast is ready");
-            Juice oj = PourOJ();
-            Console.WriteLine("oj is ready");
-
-            Console.WriteLine("Breakfast is ready!");
-            Console.Read();
-        }
-
-        private static Juice PourOJ()
-        {
-            Thread.Sleep(iDelay);
-            return new Juice();
-        }
-
-        private static void ApplyJam(Toast toast)
-        {
-            //
-            Thread.Sleep(iDelay);
-        }
-
-        private static void ApplyButter(Toast toast)
-        {
-            Console.WriteLine("ApplyButter");
-            Thread.Sleep(iDelay);
-        }
-
-        private static Toast ToastBread(int v)
-        {
-            Console.WriteLine("ToastBread");
-            Thread.Sleep(iDelay);
-            return new Toast();
-        }
-
-        private static Bacon FryBacon(int v)
-        {
-            Console.WriteLine("FryBacon");
-            Thread.Sleep(iDelay);
-            return new Bacon();
-        }
-
-        private static Egg FryEggs(int v)
-        {
-            Console.WriteLine("FryEggs");
-            Thread.Sleep(iDelay);
-            return new Egg();
-        }
-
-        private static Coffee PourCoffee()
-        {
-            Console.WriteLine("PourCoffee");
-            Thread.Sleep(iDelay);
-            return new Coffee();
-        }
-
-
-        static void Main2(string[] args)
-        {
-            TestLoopsAsync();
-
-
-
-            Console.Read();
-        }
-
-        private static async void TestLoopsAsync()
-        {
-            var tskA = MakeCoffeeAsync("a"); //setup but don't start a thread/Task
-            var tskB = FryEggsAsync("b"); //setup but don't start a thread/Task
-
-            await Task.WhenAll(tskA, tskB);
-
-            Console.WriteLine("A & B both complete - both ran at same time-ish");
-            Console.WriteLine("");
-
-            _ = MakeCoffeeAsync("c"); //an underscore is a "discard". see: https://docs.microsoft.com/en-us/dotnet/csharp/discards
-            _ = Task.Delay(10);
-            await FryEggsAsync("d");
-
-            Console.WriteLine("D done, C still running");
-            Console.WriteLine("");
-
-            await MakeCoffeeAsync("e");
-            _ = Task.Delay(10);
-            _ = FryEggsAsync("f");
-
-            Console.WriteLine("main done 3");
-            Console.WriteLine("");
-            Console.Read();
-        }
 
         private static async Task MakeCoffeeAsync(string id)
         {
@@ -201,9 +79,6 @@ namespace TestingAsync
             Console.WriteLine($"this is the continuation! MakeCoffee [{id}] - done. tid:{Thread.CurrentThread.ManagedThreadId}");
         }
 
-        #endregion
-
-
         private static async Task FryEggsAsync(string id)
         {
             Console.WriteLine($"FryEggsAsync[{id}] - started. tid:{Thread.CurrentThread.ManagedThreadId}");
@@ -219,7 +94,5 @@ namespace TestingAsync
 
             Console.WriteLine($"this is the continuation! FryEggsAsync[{id}] - done. tid:{Thread.CurrentThread.ManagedThreadId}"); ;
         }
-
-
     }
 }
