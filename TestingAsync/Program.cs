@@ -47,74 +47,38 @@ namespace TestingAsync
         {
             const int iWait_ms = 5000;
 
-            UseDishWasher("pre-breakfast").Wait(iWait_ms); //this is now sync. Timeout is short so we only wash some plates
-            AddMsg("Pots are clean. Proceed.     Some plates are clean (not all), due to timeout");
+            UseDishWasher("pre-breakfast").Wait(iWait_ms); //this is now sync. Timeout is short so we only wash some of the plates
+            AddMsg("Pots are probably clean. The longest we allow the dishwasher to run is 5s.");
 
+            //start breakfast...
             var t1 = MakeScrambledEggsAsync("eggz");
             var t2 = MakeToastAsync("tost");
-
 
             var tasks = new Task[] {
                 t1,t2
             };
 
-            Task.WhenAll(tasks).Wait(); //wait for both tasks to complete
+            Task.WhenAll(tasks).Wait(); //wait for both breakfast tasks to complete
 
             //breakfast eaten...
-            UseDishWasher("post-breakfast").Wait(); //this is now sync
-            AddMsg("Pots are clean again. Proceed.     some a's finished, due to timeout");
-
+            UseDishWasher("post-breakfast").Wait(); //this is now sync. no timeout so we guarantee cleaning cycle finishes.
+            AddMsg("Pots are clean...");
         }
 
-        private static void Foo()
-        {
-            const int iWait_ms = 1500;
-
-            MakeCoffeeAsync("a").Wait(iWait_ms); //this is now sync
-            AddMsg("some a's finished, due to timeout");
-            _ = MakeCoffeeAsync("b"); //this is async but is awaitable so warning.
-            AddMsg("b's still running");
-            var t = MakeCoffeeAsync("c"); //start thread/Task now. don't block this thread
-            AddMsg("c's still running");
-            _ = FryEggsAsync("d"); //start thread/Task now. don't block this thread
-            AddMsg("d's still running");
-        }
-
-        private static async Task FooAsync()
-        {
-            MakeCoffeeAsync("a").Wait(); //this is now sync
-            AddMsg("all a's finished");
-            await MakeCoffeeAsync("b"); //this is async but is awaitable so warning.
-            AddMsg("b's still running");
-            var t = MakeCoffeeAsync("c"); //start thread/Task now. don't block this thread
-            AddMsg("c's still running");
-            _ = FryEggsAsync("d"); //start thread/Task now. don't block this thread
-            AddMsg("d's still running");
-        }
-
-        private static void AddMsg(string v)
-        {
-            Console.WriteLine(v);
-        }
-
-        const int iDelay = 1000;
-
+        const int iDelay_ms = 1000;
 
         private static async Task UseDishWasher(string id)
         {
             Console.WriteLine($"UseDishWasher[{id}] - started. tid:{Thread.CurrentThread.ManagedThreadId}");
             //_ = Task.Delay(10); //pause calling thread
-
             await Task.Run(() => //run this thread/Task now
             {
                 for (int i = 0; i < 3; i++)
                 {
                     Console.WriteLine($"UseDishWasher[{id}] - washing plate:{i}. tid:{Thread.CurrentThread.ManagedThreadId}"); ;
-                    Thread.Sleep(iDelay);
+                    Thread.Sleep(iDelay_ms);
                 }
             });
-
-
             Console.WriteLine($"this is the continuation! UseDishWasher [{id}] - done (Pots clean). tid:{Thread.CurrentThread.ManagedThreadId}");
         }
 
@@ -122,17 +86,14 @@ namespace TestingAsync
         {
             Console.WriteLine($"MakeScrambledEggsAsync[{id}] - started. tid:{Thread.CurrentThread.ManagedThreadId}");
             //_ = Task.Delay(10); //pause calling thread
-
             await Task.Run(() => //run this thread/Task now
             {
                 for (int i = 0; i < 6; i++)
                 {
                     Console.WriteLine($"MakeScrambledEggsAsync[{id}] - egg:{i}. tid:{Thread.CurrentThread.ManagedThreadId}"); ;
-                    Thread.Sleep(iDelay);
+                    Thread.Sleep(iDelay_ms);
                 }
             });
-
-
             Console.WriteLine($"this is the continuation! MakeScrambledEggsAsync [{id}] - done. tid:{Thread.CurrentThread.ManagedThreadId}");
         }
 
@@ -141,53 +102,20 @@ namespace TestingAsync
         {
             Console.WriteLine($"MakeToast[{id}] - started. tid:{Thread.CurrentThread.ManagedThreadId}");
             //_ = Task.Delay(10); //pause calling thread
-
             await Task.Run(() => //run this thread/Task now
             {
                 for (int i = 0; i < 7; i++)
                 {
                     Console.WriteLine($"MakeToast[{id}] - slice:{i}. tid:{Thread.CurrentThread.ManagedThreadId}"); ;
-                    Thread.Sleep(iDelay);
+                    Thread.Sleep(iDelay_ms);
                 }
             });
-
-
             Console.WriteLine($"this is the continuation! MakeToast [{id}] - done. tid:{Thread.CurrentThread.ManagedThreadId}");
         }
 
-
-        private static async Task MakeCoffeeAsync(string id)
+        private static void AddMsg(string v)
         {
-            Console.WriteLine($"MakeCoffee[{id}] - started. tid:{Thread.CurrentThread.ManagedThreadId}");
-            //_ = Task.Delay(10); //pause calling thread
-
-            await Task.Run(() => //run this thread/Task now
-            {
-                for (int i = 0; i < 3; i++)
-                {
-                    Console.WriteLine($"MakeCoffee[{id}] - {i}. tid:{Thread.CurrentThread.ManagedThreadId}"); ;
-                    Thread.Sleep(iDelay);
-                }
-            }  ) ;
-
-
-            Console.WriteLine($"this is the continuation! MakeCoffee [{id}] - done. tid:{Thread.CurrentThread.ManagedThreadId}");
-        }
-
-        private static async Task FryEggsAsync(string id)
-        {
-            Console.WriteLine($"FryEggsAsync[{id}] - started. tid:{Thread.CurrentThread.ManagedThreadId}");
-            //_ = Task.Delay(10); //pause calling thread
-            await Task.Run(() => //spawn new thread
-            {
-                for (int i = 22; i < 25; i++)
-                {
-                    Console.WriteLine($"FryEggsAsync[{id}] - {i}. tid:{Thread.CurrentThread.ManagedThreadId}");
-                    Thread.Sleep(iDelay);
-                }
-            });
-
-            Console.WriteLine($"this is the continuation! FryEggsAsync[{id}] - done. tid:{Thread.CurrentThread.ManagedThreadId}"); ;
+            Console.WriteLine(v);
         }
     }
 }
