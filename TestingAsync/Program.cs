@@ -13,7 +13,7 @@ namespace TestingAsync
 
         static void Main(string[] args)
         {
-            Foo2();
+            Foo3Async().Wait();
 
             #region hide
             //Console.WriteLine("both are now running, but same 1111");
@@ -43,6 +43,38 @@ namespace TestingAsync
             Console.Read();
         }
 
+
+
+        private async static Task Foo3Async()
+        {
+            const int iWait_ms = 5000;
+
+            UseDishWasher("pre-breakfast").Wait(iWait_ms); //this is now sync. Timeout is short so we only wash some of the plates
+            AddMsg("Pots are probably clean. The longest we allow the dishwasher to run is 5s.");
+
+            //start breakfast...
+            var taskEggs = MakeScrambledEggsAsync("making eggs");
+            var tskToast = MakeToastAsync("making toast");
+
+            var tasks = new Task[] {
+                taskEggs,tskToast
+            };
+
+            AddMsg("61 - both tasks are already running...");
+            await taskEggs; //wait until thread 1 finishes
+            AddMsg("63 - eggs done");
+            await tskToast; //wait until thread 2 finishes
+            AddMsg("65 - toast done");
+
+            //Task.WhenAll(tasks).Wait(); //wait for both breakfast tasks to complete
+            AddMsg("69 - everything done");
+
+            //breakfast eaten...
+            UseDishWasher("post-breakfast").Wait(); //this is now sync. no timeout so we guarantee cleaning cycle finishes.
+            AddMsg("Pots are clean...");
+        }
+
+
         private static void Foo2()
         {
             const int iWait_ms = 5000;
@@ -51,14 +83,22 @@ namespace TestingAsync
             AddMsg("Pots are probably clean. The longest we allow the dishwasher to run is 5s.");
 
             //start breakfast...
-            var t1 = MakeScrambledEggsAsync("eggz");
-            var t2 = MakeToastAsync("tost");
+            var t1 = MakeScrambledEggsAsync("making eggs");
+            var t2 = MakeToastAsync("making toast");
 
             var tasks = new Task[] {
                 t1,t2
             };
 
+            ////both tasks are running
+            //AddMsg("61");
+            //t1.Wait(); //wait until thread 1 finishes
+            //AddMsg("63");
+            //t2.Wait(); //wait until thread 2 finishes
+            //AddMsg("65");
+
             Task.WhenAll(tasks).Wait(); //wait for both breakfast tasks to complete
+            AddMsg("69");
 
             //breakfast eaten...
             UseDishWasher("post-breakfast").Wait(); //this is now sync. no timeout so we guarantee cleaning cycle finishes.
@@ -100,17 +140,17 @@ namespace TestingAsync
 
         private static async Task MakeToastAsync(string id)
         {
-            Console.WriteLine($"MakeToast[{id}] - started. tid:{Thread.CurrentThread.ManagedThreadId}");
+            Console.WriteLine($"MakeToastAsync[{id}] - started. tid:{Thread.CurrentThread.ManagedThreadId}");
             //_ = Task.Delay(10); //pause calling thread
             await Task.Run(() => //run this thread/Task now
             {
-                for (int i = 0; i < 7; i++)
+                for (int i = 0; i < 3; i++)
                 {
-                    Console.WriteLine($"MakeToast[{id}] - slice:{i}. tid:{Thread.CurrentThread.ManagedThreadId}"); ;
+                    Console.WriteLine($"MakeToastAsync[{id}] - slice:{i}. tid:{Thread.CurrentThread.ManagedThreadId}"); ;
                     Thread.Sleep(iDelay_ms);
                 }
             });
-            Console.WriteLine($"this is the continuation! MakeToast [{id}] - done. tid:{Thread.CurrentThread.ManagedThreadId}");
+            Console.WriteLine($"this is the continuation! MakeToastAsync [{id}] - done. tid:{Thread.CurrentThread.ManagedThreadId}");
         }
 
         private static void AddMsg(string v)
