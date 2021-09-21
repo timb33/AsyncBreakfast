@@ -10,152 +10,117 @@ namespace TestingAsync
     class Program
     {
 
+        private const int _iDelay_ms = 1000;
 
         static void Main(string[] args)
         {
-            Foo3Async().Wait();
-
-            #region hide
-            //Console.WriteLine("both are now running, but same 1111");
-            //await Test1Async("a"); //start thread/Task now. thread is blocked.
-            //await Test2Async("b"); //start thread/Task now. thread is blocked.
-            //Console.WriteLine("longer hand, but same 22222");
-
-            //Console.WriteLine("longer hand, but same thing");
-            //var tskA1 = Test1Async("a");//this starts the thread without blocking, and returns a handle to the thread
-            //Console.WriteLine("21");
-            //var tskB1 = Test2Async("b");//this starts the thread without blocking
-            //Console.WriteLine("23");
-            //await tskA1;//do this,
-            //Console.WriteLine("25");
-            //await tskB1;//then this
-            //Console.WriteLine("27");
-
-            //Console.WriteLine("Now run both at same time");
-            //var tskA = Test1Async("a"); //setup and start a thread/Task. return handle. run async.
-            //var tskB = Test2Async("b"); //setup and start a thread/Task
-
-            //await Task.WhenAll(tskA, tskB);//This is synchonisation/join
-            ////var tskC = Task.WhenAll(tskA, tskB);//this is a third task, which completes when the other two complete. A task completes when it returns, not when it's finished doing its job 
-            //Console.WriteLine("wait for everything to finish");
-            #endregion
-
+            CookBreakfastAsync().Wait();//wait has no params, so wait until this is complete before reading the line. 
             Console.Read();
         }
 
-
-
-        private async static Task Foo3Async()
+        private async static Task CookBreakfastAsync()
         {
             const int iWait_ms = 5000;
 
-            UseDishWasher("pre-breakfast").Wait(iWait_ms); //this is now sync. Timeout is short so we only wash some of the plates
-            AddMsg("Pots are probably clean. The longest we allow the dishwasher to run is 5s.");
+            //AddMsg(Thread.CurrentThread.ManagedThreadId, $"no timeout - all dishes get washed");
+            //UseDishWasherAsync("pre-breakfast").Wait(); 
 
-            //start breakfast...
+            AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - give dishwasher a headstart on breakfast, but start breakfast before it's finished.");
+            UseDishWasherAsync("pre-breakfast").Wait(iWait_ms); //.Wait makes this sync. Timeout is short, so we timeout before it's finished, and only wash some of the plates, but the dishwasher continues washing plates
+            AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - most pots are probably clean. The longest we delay starting breakfast is: {iWait_ms}ms.");
+
+            AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - start breakfast... (dishes will be still washing)");
+            AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - starting eggs...");
+
             var taskEggs = MakeScrambledEggsAsync("making eggs");
+            //_ = Task.Delay(2);
+            AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - starting toast, without waiting for eggs to be finished");
             var tskToast = MakeToastAsync("making toast");
+   
+            AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - both tasks are now running");
+            //var tasks = new Task[] {
+            //    taskEggs,tskToast
+            //};
 
-            var tasks = new Task[] {
-                taskEggs,tskToast
-            };
+            AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - both tasks are now running");
 
-            AddMsg("61 - both tasks are already running...");
-            await taskEggs; //wait until thread 1 finishes
-            AddMsg("63 - eggs done");
-            await tskToast; //wait until thread 2 finishes
-            AddMsg("65 - toast done");
+            await tskToast; AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - toast done - await until MakeToastAsync thread finishes");
+
+            await taskEggs; AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - eggs done - await until MakeScrambledEggsAsync thread finishes");
+
+
 
             //Task.WhenAll(tasks).Wait(); //wait for both breakfast tasks to complete
-            AddMsg("69 - everything done");
+            AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - everything done");
 
             //breakfast eaten...
-            UseDishWasher("post-breakfast").Wait(); //this is now sync. no timeout so we guarantee cleaning cycle finishes.
-            AddMsg("Pots are clean...");
+            //UseDishWasherAsync("post-breakfast").Wait(); //this is now sync. no timeout so we guarantee cleaning cycle finishes.
+            //AddMsg(Thread.CurrentThread.ManagedThreadId, "Pots are clean...");
         }
 
-
-        private static void Foo2()
+        private static async Task UseDishWasherAsync(string id)
         {
-            const int iWait_ms = 5000;
+            int i = 0;
+            const int iMax = 9;
 
-            UseDishWasher("pre-breakfast").Wait(iWait_ms); //this is now sync. Timeout is short so we only wash some of the plates
-            AddMsg("Pots are probably clean. The longest we allow the dishwasher to run is 5s.");
-
-            //start breakfast...
-            var t1 = MakeScrambledEggsAsync("making eggs");
-            var t2 = MakeToastAsync("making toast");
-
-            var tasks = new Task[] {
-                t1,t2
-            };
-
-            ////both tasks are running
-            //AddMsg("61");
-            //t1.Wait(); //wait until thread 1 finishes
-            //AddMsg("63");
-            //t2.Wait(); //wait until thread 2 finishes
-            //AddMsg("65");
-
-            Task.WhenAll(tasks).Wait(); //wait for both breakfast tasks to complete
-            AddMsg("69");
-
-            //breakfast eaten...
-            UseDishWasher("post-breakfast").Wait(); //this is now sync. no timeout so we guarantee cleaning cycle finishes.
-            AddMsg("Pots are clean...");
-        }
-
-        const int iDelay_ms = 1000;
-
-        private static async Task UseDishWasher(string id)
-        {
-            Console.WriteLine($"UseDishWasher[{id}] - started. tid:{Thread.CurrentThread.ManagedThreadId}");
+            AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasher[{id}] - started.");
             //_ = Task.Delay(10); //pause calling thread
             await Task.Run(() => //run this thread/Task now
             {
-                for (int i = 0; i < 3; i++)
+                for (i = 0; i < iMax; i++)
                 {
-                    Console.WriteLine($"UseDishWasher[{id}] - washing plate:{i}. tid:{Thread.CurrentThread.ManagedThreadId}"); ;
-                    Thread.Sleep(iDelay_ms);
+                    AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasher[{id}] - washing plate:{i}/{iMax}."); ;
+                    Thread.Sleep(_iDelay_ms);
                 }
             });
-            Console.WriteLine($"this is the continuation! UseDishWasher [{id}] - done (Pots clean). tid:{Thread.CurrentThread.ManagedThreadId}");
+            AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasher's continuation!  [{id}] - done (All plates washed {i}/{iMax}).");
         }
 
         private static async Task MakeScrambledEggsAsync(string id)
         {
-            Console.WriteLine($"MakeScrambledEggsAsync[{id}] - started. tid:{Thread.CurrentThread.ManagedThreadId}");
+            AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync[{id}] - started.");
             //_ = Task.Delay(10); //pause calling thread
             await Task.Run(() => //run this thread/Task now
             {
                 for (int i = 0; i < 6; i++)
                 {
-                    Console.WriteLine($"MakeScrambledEggsAsync[{id}] - egg:{i}. tid:{Thread.CurrentThread.ManagedThreadId}"); ;
-                    Thread.Sleep(iDelay_ms);
+                    AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync[{id}] - egg:{i}."); ;
+                    Thread.Sleep(_iDelay_ms);
                 }
             });
-            Console.WriteLine($"this is the continuation! MakeScrambledEggsAsync [{id}] - done. tid:{Thread.CurrentThread.ManagedThreadId}");
+            AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync's continuation!  [{id}] - done.");
         }
-
 
         private static async Task MakeToastAsync(string id)
         {
-            Console.WriteLine($"MakeToastAsync[{id}] - started. tid:{Thread.CurrentThread.ManagedThreadId}");
+            AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync[{id}] - started.");
             //_ = Task.Delay(10); //pause calling thread
             await Task.Run(() => //run this thread/Task now
             {
                 for (int i = 0; i < 3; i++)
                 {
-                    Console.WriteLine($"MakeToastAsync[{id}] - slice:{i}. tid:{Thread.CurrentThread.ManagedThreadId}"); ;
-                    Thread.Sleep(iDelay_ms);
+                    AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync[{id}] - slice:{i}."); ;
+                    Thread.Sleep(_iDelay_ms);
                 }
             });
-            Console.WriteLine($"this is the continuation! MakeToastAsync [{id}] - done. tid:{Thread.CurrentThread.ManagedThreadId}");
+            AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync's continuation!  [{id}] - done.");
         }
 
-        private static void AddMsg(string v)
+        #region logging...
+        private static bool _bFirst = true;
+        private static long _iTickStart = 0;
+
+        private static void AddMsg(int tid, string v)
         {
-            Console.WriteLine(v);
+            if (_bFirst == true)
+            {
+                _bFirst = false;
+                _iTickStart = DateTime.Now.Ticks;
+            }
+
+            var delta_ms = (DateTime.Now.Ticks - _iTickStart);
+            Console.WriteLine($"{delta_ms}: ".PadLeft(12) + $" [{tid}] ".PadLeft(4) + v);
         }
+        #endregion
     }
 }
