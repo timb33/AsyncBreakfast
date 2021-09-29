@@ -94,13 +94,17 @@ namespace TestingAsync
         private static async Task MakeToastAsync(string id)
         {
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync[{id}] - started.");
-            //_ = Task.Delay(10); //pause calling thread
+
+            //_ = Task.Delay(10); //pause calling thread <- we've not awaited the discarded task. So, we're not actually pausing here. http://tomasp.net/blog/csharp-async-gotchas.aspx/ gotcha#2
+            //var delay = Task.Delay(_iDelay_ms * 5); await delay; <- you need the await otherwise the delay doesn't pause this function
+
             await Task.Run(() => //run this thread/Task now
             {
                 for (int i = 0; i < 3; i++)
                 {
                     AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync[{id}] - slice:{i}."); ;
                     Thread.Sleep(_iDelay_ms);
+                    //var t = Task.Delay(_iDelay_ms); await t; <- error
                 }
             });
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync's continuation!  [{id}] - done.");
