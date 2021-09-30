@@ -14,7 +14,7 @@ namespace AsyncBreakfast
 
         static void Main(string[] args)
         {
-            CookBreakfastAsync().Wait();//wait has no params, so wait until this is complete before reading the line. 
+            CookBreakfastAsync().Wait();//wait has no time param, so wait endlessly, until this is complete before proceeding. 
             Console.Read();
         }
 
@@ -26,7 +26,7 @@ namespace AsyncBreakfast
             //UseDishWasherAsync("pre-breakfast").Wait(); 
 
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - give dishwasher a headstart on breakfast, but start breakfast before it's finished.");
-            UseDishWasherAsync("pre-breakfast").Wait(iWait_ms); //.Wait makes this sync. Timeout is short, so we timeout before it's finished, and only wash some of the plates, but the dishwasher continues washing plates
+            UseDishWasherAsync("pre-breakfast").Wait(iWait_ms); //.Wait makes this sync. Timeout is short, so we timeout before task's finished, and only wash some of the plates (and proceed), but the dishwasher continues washing plates
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - most pots are probably clean. The longest we delay starting breakfast is: {iWait_ms}ms.");
 
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - start breakfast... (dishes will be still washing)");
