@@ -27,19 +27,19 @@ namespace AsyncBreakfast
                 {
                     var cbTask = CookBreakfastAsync(cts.Token); //breakfast is now cooking
 
-                    AddMsg(Thread.CurrentThread.ManagedThreadId, "################Intense cooking starting");
+                    AddMsg(Thread.CurrentThread.ManagedThreadId, "Main - ################Intense cooking started");
 
-                    AddMsg(Thread.CurrentThread.ManagedThreadId, "Press C to cancel breakfast");
+                    AddMsg(Thread.CurrentThread.ManagedThreadId, "Main - Press C to cancel breakfast");
                     char ch = Console.ReadKey().KeyChar;
                     if (ch == 'c' || ch == 'C')
                     {
                         cts.Cancel();
-                        AddMsg(Thread.CurrentThread.ManagedThreadId, "\nTask cancellation requested.");
+                        AddMsg(Thread.CurrentThread.ManagedThreadId, "Main - Task cancellation requested.");
                     }
 
                     //cbTask.Wait();//wait has no time param, so wait endlessly, until this is complete before proceeding. 
 
-                    AddMsg(Thread.CurrentThread.ManagedThreadId, "Breakfast completed###############################");
+                    AddMsg(Thread.CurrentThread.ManagedThreadId, "Main - Breakfast completed###############################");
                     Console.ReadKey();
                 }
                 catch (AggregateException ae)
@@ -48,13 +48,13 @@ namespace AsyncBreakfast
                         AddMsg(Thread.CurrentThread.ManagedThreadId, "Task cancelled exception detected");
                     else
                     {
-                        AddMsg(Thread.CurrentThread.ManagedThreadId, "Task xxx exception detected");
+                        AddMsg(Thread.CurrentThread.ManagedThreadId, "Main - Task xxx exception detected");
                         throw;
                     }
                 }
                 catch (Exception)
                 {
-                    AddMsg(Thread.CurrentThread.ManagedThreadId, "Task yyyy exception detected");
+                    AddMsg(Thread.CurrentThread.ManagedThreadId, "Main - Task yyyy exception detected");
                     throw;
                 }
                 finally
@@ -73,8 +73,9 @@ namespace AsyncBreakfast
                 //AddMsg(Thread.CurrentThread.ManagedThreadId, $"no timeout - all dishes get washed");
                 //UseDishWasherAsync("pre-breakfast").Wait(); 
 
+                #region start tasks running, and get handles...
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - give dishwasher a headstart on breakfast, but start breakfast before it's finished.");
-                UseDishWasherAsync("pre-breakfast", cts).Wait(iWait_ms); //.Wait makes this sync. Timeout is short, so we timeout before task's finished, and only wash some of the plates (and proceed), but the dishwasher continues washing plates
+                var t = UseDishWasherAsync("pre-breakfast", cts).Wait(iWait_ms); //.Wait makes this sync. Timeout is short, so we timeout before task's finished, and only wash some of the plates (and proceed), but the dishwasher continues washing plates
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - most pots are probably clean. The longest we delay starting breakfast is: {iWait_ms}ms.");
 
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - start breakfast... (dishes will be still washing)");
@@ -83,22 +84,21 @@ namespace AsyncBreakfast
                 var taskEggs = MakeScrambledEggsAsync("making eggs", cts);
                 //_ = Task.Delay(2);
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - starting toast, without waiting for eggs to be finished");
-                var tskToast = MakeToastAsync("making toast", cts);
+                var tskToast = MakeToastAsync("making toast", cts); 
+                #endregion
 
-                AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - both tasks are now running");
+                AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - all tasks are now running");
+
+                #region await tasks...
                 //var tasks = new Task[] {
                 //    taskEggs,tskToast
                 //};
-
                 AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - both tasks are now running");
-
                 await tskToast; AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - toast done - await until MakeToastAsync thread finishes");
-
                 await taskEggs; AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - eggs done - await until MakeScrambledEggsAsync thread finishes");
-
-
-
                 //Task.WhenAll(tasks).Wait(); //wait for both breakfast tasks to complete
+                #endregion
+
                 AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - everything done");
 
                 //breakfast eaten...
@@ -113,11 +113,11 @@ namespace AsyncBreakfast
 
         private static async Task UseDishWasherAsync(string id, CancellationToken cts)
         {
+            int i = 0;
+            const int iMaxPlates = 99;
+
             try
             {
-                int i = 0;
-                const int iMaxPlates = 99;
-
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasherAsync[{id}] - started.");
                 //_ = Task.Delay(10); //pause calling thread
                 await Task.Run(() => //run this thread/Task now
@@ -134,33 +134,42 @@ namespace AsyncBreakfast
                         Thread.Sleep(_iDelay_ms);
                     }
                 });
-                AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasherAsync's continuation!  [{id}] - done (All plates washed {i}/{iMaxPlates}).");
             }
             catch (OperationCanceledException ex)
             {
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasherAsync[{id}] - cancelled: " + ex.Message); ;
                 //throw; since we're async, this won't get caught by cookBreakfast
             }
+
+            AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasherAsync's continuation!  [{id}] - done (All plates washed {i}/{iMaxPlates}).");
         }
 
         private static async Task MakeScrambledEggsAsync(string id, CancellationToken cts)
         {
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync[{id}] - started.");
             //_ = Task.Delay(10); //pause calling thread
-            await Task.Run(() => //run this thread/Task now
+            try
             {
-                for (int i = 0; i < 6; i++)
+                await Task.Run(() => //run this thread/Task now
                 {
-                    if (cts.IsCancellationRequested)
+                    for (int i = 0; i < 6; i++)
                     {
-                        AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync - Cancelled on iteration # {i + 1}");
-                        cts.ThrowIfCancellationRequested();
-                    }
+                        if (cts.IsCancellationRequested)
+                        {
+                            AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync - Cancelled on iteration # {i + 1}");
+                            cts.ThrowIfCancellationRequested();
+                        }
 
-                    AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync[{id}] - egg:{i}."); ;
-                    Thread.Sleep(_iDelay_ms);
-                }
-            });
+                        AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync[{id}] - egg:{i}."); ;
+                        Thread.Sleep(_iDelay_ms);
+                    }
+                });
+            }
+            catch (OperationCanceledException ex)
+            {
+                AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync[{id}] - cancelled: " + ex.Message); ;
+            }
+
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync's continuation!  [{id}] - done.");
         }
 
@@ -171,21 +180,29 @@ namespace AsyncBreakfast
             //_ = Task.Delay(10); //pause calling thread <- we've not awaited the discarded task. So, we're not actually pausing here. http://tomasp.net/blog/csharp-async-gotchas.aspx/ gotcha#2
             //var delay = Task.Delay(_iDelay_ms * 5); await delay; <- you need the await otherwise the delay doesn't pause this function
 
-            await Task.Run(() => //run this thread/Task now
+            try
             {
-                for (int i = 0; i < 3; i++)
+                await Task.Run(() => //run this thread/Task now
                 {
-                    if (cts.IsCancellationRequested)
+                    for (int i = 0; i < 3; i++)
                     {
-                        AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync - Cancelled on iteration # {i + 1}");
-                        cts.ThrowIfCancellationRequested();
-                    }
+                        if (cts.IsCancellationRequested)
+                        {
+                            AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync - Cancelled on iteration # {i + 1}");
+                            cts.ThrowIfCancellationRequested();
+                        }
 
-                    AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync[{id}] - slice:{i}."); ;
-                    Thread.Sleep(_iDelay_ms);
+                        AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync[{id}] - slice:{i}."); ;
+                        Thread.Sleep(_iDelay_ms);
                     //var t = Task.Delay(_iDelay_ms); await t; <- error
                 }
-            });
+                });
+            }
+            catch (OperationCanceledException ex)
+            {
+                AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync[{id}] - cancelled: " + ex.Message); ;
+            }
+
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync's continuation!  [{id}] - done.");
         }
 
