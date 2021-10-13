@@ -64,7 +64,7 @@ namespace AsyncBreakfast
             }
         }
 
-        private static async Task CookBreakfastAsync(CancellationToken cts)
+        private static async Task CookBreakfastAsync(CancellationToken ct)
         {
             try
             {
@@ -75,16 +75,16 @@ namespace AsyncBreakfast
 
                 #region start tasks running, and get handles...
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - give dishwasher a headstart on breakfast, but start breakfast before it's finished.");
-                var t = UseDishWasherAsync("pre-breakfast", cts).Wait(iWait_ms); //.Wait makes this sync. Timeout is short, so we timeout before task's finished, and only wash some of the plates (and proceed), but the dishwasher continues washing plates
+                var t = UseDishWasherAsync("pre-breakfast", ct).Wait(iWait_ms); //.Wait makes this sync. Timeout is short, so we timeout before task's finished, and only wash some of the plates (and proceed), but the dishwasher continues washing plates
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - most pots are probably clean. The longest we delay starting breakfast is: {iWait_ms}ms.");
 
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - start breakfast... (dishes will be still washing)");
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - starting eggs...");
 
-                var taskEggs = MakeScrambledEggsAsync("making eggs", cts);
+                var taskEggs = MakeScrambledEggsAsync("making eggs", ct);
                 //_ = Task.Delay(2);
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - starting toast, without waiting for eggs to be finished");
-                var tskToast = MakeToastAsync("making toast", cts); 
+                var tskToast = MakeToastAsync("making toast", ct); 
                 #endregion
 
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - all tasks are now running");
@@ -111,7 +111,7 @@ namespace AsyncBreakfast
             }
         }
 
-        private static async Task UseDishWasherAsync(string id, CancellationToken cts)
+        private static async Task UseDishWasherAsync(string id, CancellationToken ct)
         {
             int i = 0;
             const int iMaxPlates = 99;
@@ -124,10 +124,10 @@ namespace AsyncBreakfast
                 {
                     for (i = 0; i < iMaxPlates; i++)
                     {
-                        if (cts.IsCancellationRequested)
+                        if (ct.IsCancellationRequested)
                         {
                             AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasherAsync - Cancelled on iteration # {i + 1}");
-                            cts.ThrowIfCancellationRequested();
+                            ct.ThrowIfCancellationRequested();
                         }
 
                         AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasherAsync[{id}] - washing plate:{i}/{iMaxPlates}."); ;
@@ -144,7 +144,7 @@ namespace AsyncBreakfast
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasherAsync's continuation!  [{id}] - done (All plates washed {i}/{iMaxPlates}).");
         }
 
-        private static async Task MakeScrambledEggsAsync(string id, CancellationToken cts)
+        private static async Task MakeScrambledEggsAsync(string id, CancellationToken ct)
         {
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync[{id}] - started.");
             //_ = Task.Delay(10); //pause calling thread
@@ -154,10 +154,10 @@ namespace AsyncBreakfast
                 {
                     for (int i = 0; i < 6; i++)
                     {
-                        if (cts.IsCancellationRequested)
+                        if (ct.IsCancellationRequested)
                         {
                             AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync - Cancelled on iteration # {i + 1}");
-                            cts.ThrowIfCancellationRequested();
+                            ct.ThrowIfCancellationRequested();
                         }
 
                         AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync[{id}] - egg:{i}."); ;
@@ -173,7 +173,7 @@ namespace AsyncBreakfast
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync's continuation!  [{id}] - done.");
         }
 
-        private static async Task MakeToastAsync(string id, CancellationToken cts)
+        private static async Task MakeToastAsync(string id, CancellationToken ct)
         {
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync[{id}] - started.");
 
@@ -186,10 +186,10 @@ namespace AsyncBreakfast
                 {
                     for (int i = 0; i < 3; i++)
                     {
-                        if (cts.IsCancellationRequested)
+                        if (ct.IsCancellationRequested)
                         {
                             AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync - Cancelled on iteration # {i + 1}");
-                            cts.ThrowIfCancellationRequested();
+                            ct.ThrowIfCancellationRequested();
                         }
 
                         AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync[{id}] - slice:{i}."); ;
