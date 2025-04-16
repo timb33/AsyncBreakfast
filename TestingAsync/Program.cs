@@ -94,9 +94,12 @@ namespace AsyncBreakfast
                 //    taskEggs,tskToast
                 //};
                 AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - both tasks are now running");
-                await tskToast; AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - toast done - await until MakeToastAsync thread finishes");
-                await taskEggs; AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - eggs done - await until MakeScrambledEggsAsync thread finishes");
-                //Task.WhenAll(tasks).Wait(); //wait for both breakfast tasks to complete
+                //await tskToast; AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - toast done - await until MakeToastAsync thread finishes");
+                //await taskEggs; AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - eggs done - await until MakeScrambledEggsAsync thread finishes");
+                //Task.WhenAll(tasks).Wait(); //wait for both breakfast tasks to complete - works, but blocks the thread (wastes a thread)
+                await Task.WhenAll(taskEggs, tskToast);//wait for both breakfast tasks to complete - doesn't block the thread
+                AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - toast and eggs done");
+
                 #endregion
 
                 AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - everything done");
