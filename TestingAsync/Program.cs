@@ -212,8 +212,9 @@ namespace AsyncBreakfast
                 _iTickStart = DateTime.Now.Ticks;
             }
 
-            var delta_ms = (DateTime.Now.Ticks - _iTickStart);
-            Console.WriteLine($"{delta_ms}: ".PadLeft(12) + $" [{tid}] ".PadLeft(4) + v);
+            // Using Ticks for a crude timestamp, better replaced by System.Diagnostics.Stopwatch for real code.
+            var delta_ms = (DateTime.Now.Ticks - _iTickStart) / TimeSpan.TicksPerMillisecond;
+            Console.WriteLine($"{delta_ms:N0}ms: ".PadLeft(12) + $" [{tid}] ".PadLeft(4) + v);
         }
         #endregion
     }
