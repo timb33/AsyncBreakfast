@@ -29,7 +29,7 @@ namespace AsyncBreakfast
 
                     AddMsg(Thread.CurrentThread.ManagedThreadId, "Main - ################Intense cooking started");
 
-                    AddMsg(Thread.CurrentThread.ManagedThreadId, "Main - Press C to cancel breakfast");
+                    AddMsg(Thread.CurrentThread.ManagedThreadId, "Main - Press C to cancel breakfast (not CTRL+C, which kills the app)");
                     char ch = Console.ReadKey().KeyChar;
                     if (ch == 'c' || ch == 'C')
                     {
@@ -62,6 +62,8 @@ namespace AsyncBreakfast
                     //cts.Dispose();
                 }
             }
+
+            Console.ReadKey(); //keep the window open, so we can view the console
         }
 
         private static async Task CookBreakfastAsync(CancellationToken ct)
@@ -77,7 +79,7 @@ namespace AsyncBreakfast
                 var dishWasherTask = UseDishWasherAsync("pre-breakfast", ct);
 
                 // 2. Create a non-blocking timeout task
-                var delayTask = Task.Delay(iHeadStart_ms);
+                var delayTask = Task.Delay(iHeadStart_ms);//.ConfigureAwait(false); //be consistent
 
                 // 3. Wait until EITHER the dishwasher finishes OR the delay expires.
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - waiting for max headstart of {iHeadStart_ms}ms.");
@@ -120,7 +122,7 @@ namespace AsyncBreakfast
                     {
                         if (ct.IsCancellationRequested)
                         {
-                            AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasherAsync - Cancelled on iteration # {i + 1}");
+                            AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasherAsync - Cancelling on iteration # {i + 1}");
                             ct.ThrowIfCancellationRequested();
                         }
 
@@ -146,15 +148,16 @@ namespace AsyncBreakfast
             {
                 await Task.Run(() => //run this thread/Task now
                 {
+                    const int iEggMax = 6;
                     for (int i = 0; i < 6; i++)
                     {
                         if (ct.IsCancellationRequested)
                         {
-                            AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync - Cancelled on iteration # {i + 1}");
+                            AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync - Cancelling on iteration # {i + 1}");
                             ct.ThrowIfCancellationRequested();
                         }
 
-                        AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync[{id}] - egg:{i}."); ;
+                        AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync[{id}] - egg:{i}/{iEggMax}"); ;
                         Thread.Sleep(_iDelay_ms);
                     }
                 });
@@ -182,7 +185,7 @@ namespace AsyncBreakfast
                     {
                         if (ct.IsCancellationRequested)
                         {
-                            AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync - Cancelled on iteration # {i + 1}");
+                            AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync - Cancelling on iteration # {i + 1}");
                             ct.ThrowIfCancellationRequested();
                         }
 
