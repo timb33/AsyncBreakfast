@@ -134,7 +134,7 @@ namespace AsyncBreakfast
             catch (OperationCanceledException ex)
             {
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasherAsync[{id}] - cancelled: " + ex.Message); ;
-                //throw; since we're async, this won't get caught by cookBreakfast
+                throw; 
             }
 
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasherAsync's continuation!  [{id}] - done (All plates washed {i}/{iMaxPlates}).");
@@ -164,7 +164,8 @@ namespace AsyncBreakfast
             }
             catch (OperationCanceledException ex)
             {
-                AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync[{id}] - cancelled: " + ex.Message); ;
+                AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync[{id}] - cancelled: " + ex.Message);
+                throw;
             }
 
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync's continuation!  [{id}] - done.");
@@ -197,7 +198,8 @@ namespace AsyncBreakfast
             }
             catch (OperationCanceledException ex)
             {
-                AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync[{id}] - cancelled: " + ex.Message); ;
+                AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync[{id}] - cancelled: " + ex.Message);
+                throw;
             }
 
             AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync's continuation!  [{id}] - done.");
