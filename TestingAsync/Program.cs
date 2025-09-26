@@ -38,11 +38,9 @@ namespace AsyncBreakfast
                     }
 
                     //cbTask.Wait();//wait has no time param, so wait endlessly, until this is complete before proceeding. 
-                    cbTask.GetAwaiter().GetResult();
+                    cbTask.GetAwaiter().GetResult(); //wait for everything to close down, even if we're cancelled.
 
 
-                    AddMsg(Thread.CurrentThread.ManagedThreadId, "Main - Breakfast completed###############################");
-                    Console.ReadKey();
                 }
                 catch (AggregateException ae)
                 {
@@ -65,6 +63,7 @@ namespace AsyncBreakfast
                 }
             }
 
+            Console.WriteLine( "We're really done. Any key to finish");
             Console.ReadKey(); //keep the window open, so we can view the console
         }
 
@@ -106,6 +105,10 @@ namespace AsyncBreakfast
             {
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"CookBreakfastAsync - cancelled: " + ex.Message);
                 throw;
+            }
+            finally {
+                AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - Breakfast completed###############################");
+                AddMsg(Thread.CurrentThread.ManagedThreadId, "CookBreakfastAsync - the cancel keyread doesn't know that we've finished");
             }
         }
 
