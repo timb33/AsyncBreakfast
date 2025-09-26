@@ -38,6 +38,8 @@ namespace AsyncBreakfast
                     }
 
                     //cbTask.Wait();//wait has no time param, so wait endlessly, until this is complete before proceeding. 
+                    cbTask.GetAwaiter().GetResult();
+
 
                     AddMsg(Thread.CurrentThread.ManagedThreadId, "Main - Breakfast completed###############################");
                     Console.ReadKey();
