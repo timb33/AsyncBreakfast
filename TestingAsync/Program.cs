@@ -116,7 +116,7 @@ namespace AsyncBreakfast
             {
                 AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasherAsync[{id}] - started.");
                 //_ = Task.Delay(10); //pause calling thread
-                await Task.Run(() => //run this thread/Task now
+                //await Task.Run(() => //run this thread/Task now
                 {
                     for (i = 0; i < iMaxPlates; i++)
                     {
@@ -127,9 +127,9 @@ namespace AsyncBreakfast
                         }
 
                         AddMsg(Thread.CurrentThread.ManagedThreadId, $"UseDishWasherAsync[{id}] - washing plate:{i}/{iMaxPlates}."); ;
-                        Thread.Sleep(_iDelay_ms);
+                        await Task.Delay(_iDelay_ms, ct);//Thread.Sleep(_iDelay_ms);//this blocks, causing thread to be locked for a full second doing nothing  
                     }
-                });
+                }//);
             }
             catch (OperationCanceledException ex)
             {
@@ -146,7 +146,7 @@ namespace AsyncBreakfast
             //_ = Task.Delay(10); //pause calling thread
             try
             {
-                await Task.Run(() => //run this thread/Task now
+                //await Task.Run(() => //run this thread/Task now
                 {
                     const int iEggMax = 6;
                     for (int i = 0; i < 6; i++)
@@ -158,9 +158,9 @@ namespace AsyncBreakfast
                         }
 
                         AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeScrambledEggsAsync[{id}] - egg:{i}/{iEggMax}"); ;
-                        Thread.Sleep(_iDelay_ms);
+                        await Task.Delay(_iDelay_ms, ct);//Thread.Sleep(_iDelay_ms);//this blocks
                     }
-                });
+                }//);
             }
             catch (OperationCanceledException ex)
             {
@@ -179,7 +179,7 @@ namespace AsyncBreakfast
 
             try
             {
-                await Task.Run(() => //run this thread/Task now
+                //await Task.Run(() => //run this thread/Task now
                 {
                     for (int i = 0; i < 3; i++)
                     {
@@ -190,10 +190,10 @@ namespace AsyncBreakfast
                         }
 
                         AddMsg(Thread.CurrentThread.ManagedThreadId, $"MakeToastAsync[{id}] - slice:{i}."); ;
-                        Thread.Sleep(_iDelay_ms);
-                        //var t = Task.Delay(_iDelay_ms); await t; <- error
+                        //await Task.Delay(_iDelay_ms, ct);//Thread.Sleep(_iDelay_ms);//this blocks
+                        var t = Task.Delay(_iDelay_ms); await t;// <- no error
                     }
-                });
+                }//);
             }
             catch (OperationCanceledException ex)
             {
